@@ -1,47 +1,72 @@
-const fetch = require('node-fetch');  // Для взаимодействия с Jexactyl API
-const { Telegraf } = require('telegraf');  // Telegram Bot API
+const puppeteer = require('puppeteer');
+const { Telegraf } = require('telegraf');
 
-// Токен вашего Telegram-бота
+// Инициализация Telegram бота
 const bot = new Telegraf('7088257898:AAGYmhnb4Lfu7_gFUCt-KwlsB0I80Wrv7Ko');
 
 // Обработчик команды /start
 bot.start((ctx) => {
-    ctx.reply('Добро пожаловать! Чтобы зарегистрироваться на панели Jexactyl, отправьте команду /register.');
+    ctx.reply('Добро пожаловать! Отправьте команду /register, чтобы зарегистрироваться.');
 });
 
 // Обработчик команды /register
 bot.command('register', async (ctx) => {
-    // Спросим у пользователя email для регистрации
-    ctx.reply('Пожалуйста, введите ваш email для регистрации.');
+    ctx.reply('Пожалуйста, введите ваш email:');
 
-    // Обработчик текстовых сообщений после команды /register
-    bot.on('text', async (ctx) => {
-        const email = ctx.message.text;
+    // Запрашиваем email
+    bot.once('text', async (ctx) => {
+        const email = ctx.message.text.trim();
 
-        try {
-            // Выполним запрос на API панели Jexactyl для регистрации пользователя
-            const response = await fetch('https://dash.kazaknodes.online/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ptla_DIizelsC2SsouBJwSK2Z6LpSFerVTVp2IMbz1po2IjN'
-                },
-                body: JSON.stringify({
-                    email: email,
-                    // Добавьте любые другие необходимые поля, такие как username, password и т.д.
-                })
+        ctx.reply('Введите имя пользователя:');
+        // Запрашиваем имя пользователя
+        bot.once('text', async (ctx) => {
+            const username = ctx.message.text.trim();
+
+            ctx.reply('Введите пароль:');
+            // Запрашиваем пароль
+            bot.once('text', async (ctx) => {
+                const password = ctx.message.text.trim();
+                
+                ctx.reply('Регистрация началась. Пожалуйста, подождите...');
+
+                try {
+                    // Запускаем Puppeteer и открываем браузер
+                    const browser = await puppeteer.launch({ headless: true });
+                    const page = await browser.newPage();
+
+                    // Переходим на страницу регистрации
+                    await page.goto('https://dash.kazaknodes.online/auth/register');
+
+                    // Заполняем форму регистрации
+                    await page.type('input[name="email"]', email);  // Замените на правильные селекторы
+                    await page.type('input[name="username"]', username);  // Замените на правильные селекторы
+                    await page.type('input[name="password"]', password);  // Замените на правильные селекторы
+                    await page.type('input[name="password_confirmation"]', password);  // Подтверждение пароля
+
+                    // Отправляем форму
+                    await Promise.all([
+                        page.click('button[type="submit"]'), // Замените на правильный селектор кнопки отправки
+                        page.waitForNavigation({ waitUntil: 'networkidle0' }),
+                    ]);
+
+                    // Проверка успешности регистрации
+                    const successMessage = await page.evaluate(() => {
+                        return document.querySelector('.success-message-selector') ? true : false; // Замените на реальный селектор успеха
+                    });
+
+                    if (successMessage) {
+                        ctx.reply('Регистрация прошла успешно!');
+                    } else {
+                        ctx.reply('Регистрация не удалась. Проверьте введенные данные и попробуйте еще раз.');
+                    }
+
+                    await browser.close();
+                } catch (error) {
+                    console.error('Ошибка при регистрации:', error);
+                    ctx.reply('Произошла ошибка при регистрации. Пожалуйста, попробуйте позже.');
+                }
             });
-
-            if (response.ok) {
-                const result = await response.json();
-                ctx.reply(`Регистрация успешна! Ваш логин: ${result.username}`);
-            } else {
-                ctx.reply('Произошла ошибка при регистрации. Пожалуйста, попробуйте снова.');
-            }
-        } catch (error) {
-            console.error('Ошибка:', error);
-            ctx.reply('Произошла ошибка при регистрации. Пожалуйста, попробуйте позже.');
-        }
+        });
     });
 });
 
