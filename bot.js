@@ -1,8 +1,8 @@
-const puppeteer = require('puppeteer');
+const axios = require('axios');
 const { Telegraf } = require('telegraf');
 
 // Инициализация Telegram бота
-const bot = new Telegraf('7088257898:AAGYmhnb4Lfu7_gFUCt-KwlsB0I80Wrv7Ko');
+const bot = new Telegraf('7088257898:AAEbKNSqu67O3J4oMgMzexLsCd7_jZGYfTM');
 
 // Обработчик команды /start
 bot.start((ctx) => {
@@ -30,39 +30,22 @@ bot.command('register', async (ctx) => {
                 ctx.reply('Регистрация началась. Пожалуйста, подождите...');
 
                 try {
-                    // Запускаем Puppeteer и открываем браузер
-                    const browser = await puppeteer.launch({ headless: true });
-                    const page = await browser.newPage();
-
-                    // Переходим на страницу регистрации
-                    await page.goto('https://dash.kazaknodes.online/auth/register');
-
-                    // Заполняем форму регистрации
-                    await page.type('input[name="email"]', email);  // Замените на правильные селекторы
-                    await page.type('input[name="username"]', username);  // Замените на правильные селекторы
-                    await page.type('input[name="password"]', password);  // Замените на правильные селекторы
-                    await page.type('input[name="password_confirmation"]', password);  // Подтверждение пароля
-
-                    // Отправляем форму
-                    await Promise.all([
-                        page.click('button[type="submit"]'), // Замените на правильный селектор кнопки отправки
-                        page.waitForNavigation({ waitUntil: 'networkidle0' }),
-                    ]);
-
-                    // Проверка успешности регистрации
-                    const successMessage = await page.evaluate(() => {
-                        return document.querySelector('.success-message-selector') ? true : false; // Замените на реальный селектор успеха
+                    // Выполнение HTTP-запроса для регистрации пользователя
+                    const response = await axios.post('https://dash.kazaknodes.online/auth/register', {
+                        email: email,
+                        username: username,
+                        password: password,
+                        password_confirmation: password // Подтверждение пароля
                     });
 
-                    if (successMessage) {
+                    // Обработка ответа сервера
+                    if (response.status === 200) {
                         ctx.reply('Регистрация прошла успешно!');
                     } else {
-                        ctx.reply('Регистрация не удалась. Проверьте введенные данные и попробуйте еще раз.');
+                        ctx.reply(`Ошибка при регистрации: ${response.data.message || 'Неизвестная ошибка'}`);
                     }
-
-                    await browser.close();
                 } catch (error) {
-                    console.error('Ошибка при регистрации:', error);
+                    console.error('Ошибка при выполнении запроса:', error);
                     ctx.reply('Произошла ошибка при регистрации. Пожалуйста, попробуйте позже.');
                 }
             });
