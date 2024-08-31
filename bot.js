@@ -7,7 +7,7 @@ const bot = new TelegramBot(token, { polling: true });
 
 // URL и токен вашего Jexactyl API
 const jexactylAPIURL = 'https://dash.kazaknodes.online/api'; // URL вашего Jexactyl API
-let jexactylAPIToken = '';  // Этот токен будет устанавливаться после входа
+const jexactylAPIToken = 'ptlc_dC1DzUgZRBFCtgrhjuNnk668UHv0oX3jv08eoEz260k'; // Ваш API ключ
 
 // Nest ID и Egg ID
 const nestId = '5';
@@ -16,38 +16,12 @@ const eggId = '15';
 // Обработчик команды /start
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, 'Добро пожаловать! Доступные команды: /login, /start_server, /stop_server, /restart_server, /create_server');
-});
-
-// Обработчик команды /login
-bot.onText(/\/login (.+) (.+)/, async (msg, match) => {
-  const chatId = msg.chat.id;
-  const username = match[1];
-  const password = match[2];
-  
-  try {
-    const response = await axios.post(`${jexactylAPIURL}/auth/login`, {
-      username,
-      password
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    jexactylAPIToken = response.data.token;  // Сохраняем токен
-    bot.sendMessage(chatId, 'Вход выполнен успешно. Вы можете управлять серверами.');
-  } catch (error) {
-    bot.sendMessage(chatId, 'Ошибка входа: ' + error.message);
-  }
+  bot.sendMessage(chatId, 'Добро пожаловать! Доступные команды: /start_server, /stop_server, /restart_server, /create_server');
 });
 
 // Обработчик команды /start_server
 bot.onText(/\/start_server/, async (msg) => {
   const chatId = msg.chat.id;
-  if (!jexactylAPIToken) {
-    return bot.sendMessage(chatId, 'Сначала выполните вход командой /login.');
-  }
   
   try {
     const serverId = '53060a7b-9aac-41c9-b788-d4c080479562'; // Ваш ID сервера
@@ -68,9 +42,6 @@ bot.onText(/\/start_server/, async (msg) => {
 // Обработчик команды /stop_server
 bot.onText(/\/stop_server/, async (msg) => {
   const chatId = msg.chat.id;
-  if (!jexactylAPIToken) {
-    return bot.sendMessage(chatId, 'Сначала выполните вход командой /login.');
-  }
   
   try {
     const serverId = '53060a7b-9aac-41c9-b788-d4c080479562'; // Ваш ID сервера
@@ -91,9 +62,6 @@ bot.onText(/\/stop_server/, async (msg) => {
 // Обработчик команды /restart_server
 bot.onText(/\/restart_server/, async (msg) => {
   const chatId = msg.chat.id;
-  if (!jexactylAPIToken) {
-    return bot.sendMessage(chatId, 'Сначала выполните вход командой /login.');
-  }
   
   try {
     const serverId = '53060a7b-9aac-41c9-b788-d4c080479562'; // Ваш ID сервера
@@ -114,9 +82,6 @@ bot.onText(/\/restart_server/, async (msg) => {
 // Обработчик команды /create_server
 bot.onText(/\/create_server (.+) (.+) (.+) (.+) (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
-  if (!jexactylAPIToken) {
-    return bot.sendMessage(chatId, 'Сначала выполните вход командой /login.');
-  }
   
   const name = match[1];
   const description = match[2];
